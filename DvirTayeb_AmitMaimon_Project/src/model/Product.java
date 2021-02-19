@@ -61,6 +61,11 @@ public class Product implements Serializable, Comparable<Product> {
 	public void setClient(Client client) {
 		this.client = client;
 	}
+	
+	public ProductMemento saveToMememnto() {
+		return new ProductMemento(this);
+	}
+
 
 	@Override
 	public int compareTo(Product product) {

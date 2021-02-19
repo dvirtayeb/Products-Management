@@ -1,6 +1,12 @@
 package model;
 
-public class Barcode {
+import java.io.Serializable;
+
+public class Barcode implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private String barcode;
 
 	public Barcode(String barcode) {

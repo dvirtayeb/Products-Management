@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -34,8 +35,6 @@ public class ControllerProcess {
 	private StoreManagment storeM;
 	private StoreView storeView;
 	private ProductView showProducts;
-	private ShowCommand showCommand;
-	private StoreCommand storeCommand;
 
 	private InsertProductView insertProductView;
 	private static Alert insertSuccesAlert;
@@ -45,10 +44,14 @@ public class ControllerProcess {
 
 	private File productFile;
 	private boolean isAppendableProductFile;
-	private ObjectOutputStream objectOutputS;
-	private ObjectInputStream objectInputS;
+	private RandomAccessFile raf;
+//	private ObjectOutputStream objectOutputS;
+//	private ObjectInputStream objectInputS;
+	
 	private InsertCommand insertCommand;
 	private ChooseSortCommand sortCommand;
+	private ShowCommand showCommand;
+	private StoreCommand storeCommand;
 
 	public ControllerProcess(StoreManagment storeManagement, StoreView storeView, Stage stage) throws Exception {
 		storeM = storeManagement;
@@ -143,14 +146,15 @@ public class ControllerProcess {
 		isAppendableProductFile = productFile.exists();
 	}
 
-	private void initObjectStream() {
+	private void initObjectStream() { // need to change
 		resetOutputStream();
 		resetInputStream();
 	}
 
 	private void resetInputStream() { // create Input Stream For READ
 		try {
-			objectInputS = new ObjectInputStream(new FileInputStream(productFile));
+			raf = new RandomAccessFile(productFile, "r");
+//			objectInputS = new ObjectInputStream(new FileInputStream(productFile));
 		} catch (FileNotFoundException e) {
 			System.out.println("resetInputStream Method Exception: " + e.getMessage());
 		} catch (IOException e) {
@@ -160,16 +164,18 @@ public class ControllerProcess {
 
 	private void resetOutputStream() { // create or reset Output Stream For WRITE
 		try {
-			if (isAppendableProductFile) {
-				objectOutputS = new ObjectOutputStream(new FileOutputStream(productFile, isAppendableProductFile)) {
-					@Override
-					protected void writeStreamHeader() throws IOException {
-						return;
-					}
-				};
-			} else
-				objectOutputS = new ObjectOutputStream(new FileOutputStream(productFile, isAppendableProductFile));
-
+//			if (isAppendableProductFile) {
+//				objectOutputS = new ObjectOutputStream(new FileOutputStream(productFile, isAppendableProductFile)) {
+//					@Override
+//					protected void writeStreamHeader() throws IOException {
+//						return;
+//					}
+//				};
+//			} else
+//			{
+//				objectOutputS = new ObjectOutputStream(new FileOutputStream(productFile, isAppendableProductFile));
+				raf = new RandomAccessFile(productFile, "w");
+//			}
 		} catch (FileNotFoundException e) {
 			System.out.println("resetOutputStream method Exception: " + e.getMessage());
 		} catch (IOException e) {
@@ -180,12 +186,18 @@ public class ControllerProcess {
 	// load Products from file and insert to the hashMap:
 	public boolean initProductsFromFile() {
 		try {
-			if (objectInputS.available() == 0)
+			ArrayList<byte[]> tempByte = new ArrayList<>();
+			tempByte.add(new byte[insertProductView.getTextFieldList().get(0).getText().length()]);
+			tempByte.add(new byte[insertProductView.getTextFieldList().get(1).getText().length()]);
+			tempByte.add(new byte[insertProductView.getTextFieldList().get(2).getText().length()]);
+			tempByte.add(new byte[insertProductView.getTextFieldList().get(3).getText().length()]);
+			tempByte.add(new byte[insertProductView.getTextFieldList().get(4).getText().length()]);
+			tempByte.add(new byte[insertProductView.getTextFieldList().get(5).getText().length()]);
+			tempByte.add(new byte[(""+insertProductView.getSaleUpdate()).length()]);
+			if(raf.length() == 0)
 				resetInputStream();
-			while (objectInputS.available() != 0) {
-				objectInputS.readUTF();
-				Product product = (Product) objectInputS.readObject();
-				storeM.addProduct(product);
+			while (raf.read() != -1) {
+				readProduct(raf, tempByte);
 			}
 			return true;
 		} catch (IOException e1) {
@@ -194,6 +206,21 @@ public class ControllerProcess {
 			System.out.println("No product to load");
 		}
 		return false;
+	}
+
+	
+	public void readProduct(RandomAccessFile raf,ArrayList<byte[]> tempArr)
+	{
+		String name = new String(tempArr.get(0));
+		String costM = new String(tempArr.get(1));
+		String costC = new String(tempArr.get(2));
+		String barCode = new String(tempArr.get(3));
+		String clientName = new String(tempArr.get(4));
+		String clientPhone = new String(tempArr.get(5));
+		boolean saleUpdate = Boolean.parseBoolean(new String(tempArr.get(6)));
+		Client c = new Client(clientName, clientPhone, saleUpdate);
+		Product product = new Product(name, Integer.parseInt(costM), Integer.parseInt(costC), c, barCode);
+		storeM.addProduct(product);
 	}
 
 	public void loadProductsToPage() throws Exception {
@@ -310,25 +337,33 @@ public class ControllerProcess {
 		switch (selected) {
 		case 0:
 			for (Map.Entry<String, Product> product : storeM.getSortedByAscending().entrySet()) {
-				objectOutputS.writeUTF("Product");
-				objectOutputS.writeObject(product.getValue());
+				writeProduct(raf, product);
 			}
 			break;
 		case 1:
 			for (Map.Entry<String, Product> product : storeM.getSortedByDescending().entrySet()) {
-				objectOutputS.writeUTF("Product");
-				objectOutputS.writeObject(product.getValue());
+				writeProduct(raf, product);
 			}
 			break;
 		case 2:
 			for (Map.Entry<String, Product> product : storeM.getSortedByInserting().entrySet()) {
-				objectOutputS.writeUTF("Product");
-				objectOutputS.writeObject(product.getValue());
+				writeProduct(raf, product);
 			}
 			break;
 		default:
 			throw new Exception();
 		}
+	}
+	
+	public void writeProduct(RandomAccessFile raf, Map.Entry<String, Product> product) throws IOException
+	{
+		raf.writeUTF(product.getValue().getName());
+		raf.writeUTF(""+product.getValue().getCostPriceManager());
+		raf.writeUTF(""+product.getValue().getCostPriceClient());
+		raf.writeUTF(product.getValue().getBarCode());
+		raf.writeUTF(product.getValue().getClient().getName());
+		raf.writeUTF(product.getValue().getClient().getPhoneNumber());
+		raf.writeUTF(""+product.getValue().getClient().isSaleUpdate());
 	}
 	
 	public void setSort() {

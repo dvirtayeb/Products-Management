@@ -43,15 +43,15 @@ public class Client implements Serializable{
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("[ name=");
-		builder.append(name);
-		builder.append(", phoneNumber=");
-		builder.append(phoneNumber);
-		builder.append(", saleUpdate=");
-		builder.append(saleUpdate);
-		builder.append("]");
-		return builder.toString();
+		StringBuilder strBuffer = new StringBuilder();
+		strBuffer.append("[ name=");
+		strBuffer.append(name);
+		strBuffer.append(", phoneNumber=");
+		strBuffer.append(phoneNumber);
+		strBuffer.append(", saleUpdate=");
+		strBuffer.append(saleUpdate);
+		strBuffer.append("]");
+		return strBuffer.toString();
 	}
 	
 	

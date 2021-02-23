@@ -1,7 +1,7 @@
 import controller.ControllerProcess;
 import javafx.application.Application;
 import javafx.stage.Stage;
-import model.StoreManagment;
+import model.StoreManagement;
 import view.StoreView;
 
 public class Program extends Application{
@@ -13,7 +13,7 @@ public class Program extends Application{
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		primaryStage.setTitle("Store");
-		StoreManagment theStore = new StoreManagment();
+		StoreManagement theStore = new StoreManagement();
 		StoreView storeView = new StoreView(primaryStage);
 		ControllerProcess theController = new ControllerProcess(theStore, storeView, primaryStage);
 

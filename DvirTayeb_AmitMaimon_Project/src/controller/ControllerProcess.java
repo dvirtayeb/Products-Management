@@ -1,13 +1,7 @@
 package controller;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -20,40 +14,41 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
 import model.Client;
+import model.DeleteCommand;
 import model.InsertCommand;
 import model.Product;
 import model.ShowCommand;
 import model.StoreCommand;
-import model.StoreManagment;
+import model.StoreManagement;
 import model.Barcode;
 import model.ChooseSortCommand;
 import view.ProductView;
+import view.DeleteProductView;
 import view.InsertProductView;
 import view.StoreView;
 
 public class ControllerProcess {
-	private StoreManagment storeM;
+	private StoreManagement storeM;
 	private StoreView storeView;
 	private ProductView showProducts;
 
 	private InsertProductView insertProductView;
+	private DeleteProductView deleteProductView;
 	private static Alert insertSuccesAlert;
 	private static Alert insertFailedAlert;
 	private static Alert filexistsAlert;
 	private static Alert sortErrorAlert;
-
-	private File productFile;
-	private boolean isAppendableProductFile;
-	private RandomAccessFile raf;
-//	private ObjectOutputStream objectOutputS;
-//	private ObjectInputStream objectInputS;
+	private static Alert deleteSuccesAlert;
+	private static Alert deleteFailedAlert;
 	
 	private InsertCommand insertCommand;
 	private ChooseSortCommand sortCommand;
 	private ShowCommand showCommand;
 	private StoreCommand storeCommand;
+	private DeleteCommand deleteCommand;
 
-	public ControllerProcess(StoreManagment storeManagement, StoreView storeView, Stage stage) throws Exception {
+
+	public ControllerProcess(StoreManagement storeManagement, StoreView storeView, Stage stage) throws Exception {
 		storeM = storeManagement;
 		this.storeView = storeView;
 		// Alerts:
@@ -63,23 +58,22 @@ public class ControllerProcess {
 		filexistsAlert.setHeaderText("There is Products already in the System");
 		insertSuccesAlert = new Alert(AlertType.INFORMATION, "The Product Added!", ButtonType.OK);
 		insertFailedAlert = new Alert(AlertType.INFORMATION, "The Product Not Added!", ButtonType.OK);
+		deleteSuccesAlert = new Alert(AlertType.INFORMATION, "The Product Not found!", ButtonType.OK);
+		deleteFailedAlert = new Alert(AlertType.INFORMATION, "The Product Deleted!", ButtonType.OK);
 		// Commands:
 		showCommand = new ShowCommand("Show",storeView);
 		insertCommand = new InsertCommand("Insert", storeView);
 		sortCommand = new ChooseSortCommand("Sort", storeView);
-		storeCommand = new StoreCommand(showCommand,insertCommand, sortCommand);
-		// init File & ObjectOutputStream:
-		initAppandable();
-		initObjectStream();
-		// check if possible to READ from file:
-		if (isAppendableProductFile != false) {
+		deleteCommand = new DeleteCommand("Delete", storeView);
+		storeCommand = new StoreCommand(showCommand,insertCommand, sortCommand, deleteCommand);
+
+		if (storeM.isAppendableProductFile() != false) {
 			// read from file and save to hashMap
-			initProductsFromFile();
+			storeM.initProductsFromFile();
 			filexistsAlert.show();
 		}
 		// Show Products: (work only when clicked on page)
 		EventHandler<ActionEvent> eventShowProducts = new EventHandler<ActionEvent>() {
-//		storeEventList.add(new EventHandler<ActionEvent>() {
 
 			@Override
 			public void handle(ActionEvent arg0) {
@@ -103,8 +97,9 @@ public class ControllerProcess {
 						insertProductView.getSave().setOnAction(e -> {
 							try {
 								if (saveProductFromPage()) {
+									//  ---------------> memento undo kapara!.
 									storeM.sort();
-									saveProductsToFile();
+									storeM.saveProductsToFile();
 									insertSuccesAlert.show();
 									// clear the page:
 									cleanPage();
@@ -117,6 +112,7 @@ public class ControllerProcess {
 							} catch (Exception e1) {
 								System.out.println("the user didn't selected Sorting");
 								insertFailedAlert.show();
+								e1.getMessage();
 							}
 						});
 					} else
@@ -129,6 +125,35 @@ public class ControllerProcess {
 		};
 		storeCommand.execute(insertCommand.getName(), storeView.getBtnInsert(), eventInsertProducts);
 		
+		// Delete Product:
+		EventHandler<ActionEvent> eventDeleteProduct = new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent arg0) {
+				try {
+					deleteProductView = new DeleteProductView(new Stage());
+					deleteProductView.getDelete().setOnAction(e ->{
+						try {
+							if(storeM.removeProductFromFile(deleteProductView.getTf().getText()))
+							{
+								deleteFailedAlert.show();
+							}else {
+								deleteSuccesAlert.show();
+							}
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+					});
+					
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+				
+			}
+			
+		};
+		storeCommand.execute(deleteCommand.getName(), storeView.getBtnDelete(), eventDeleteProduct);
+		
 		// Selected Sort: (work only when selected)
 		EventHandler<ActionEvent> eventSort = new EventHandler<ActionEvent>() {
 			@Override
@@ -140,90 +165,7 @@ public class ControllerProcess {
 
 	}
 
-	// create file:
-	private void initAppandable() {
-		productFile = new File("products.txt");
-		isAppendableProductFile = productFile.exists();
-	}
-
-	private void initObjectStream() { // need to change
-		resetOutputStream();
-		resetInputStream();
-	}
-
-	private void resetInputStream() { // create Input Stream For READ
-		try {
-			raf = new RandomAccessFile(productFile, "r");
-//			objectInputS = new ObjectInputStream(new FileInputStream(productFile));
-		} catch (FileNotFoundException e) {
-			System.out.println("resetInputStream Method Exception: " + e.getMessage());
-		} catch (IOException e) {
-			System.out.println("resetInputStream Method Exception: " + e.getMessage());
-		}
-	}
-
-	private void resetOutputStream() { // create or reset Output Stream For WRITE
-		try {
-//			if (isAppendableProductFile) {
-//				objectOutputS = new ObjectOutputStream(new FileOutputStream(productFile, isAppendableProductFile)) {
-//					@Override
-//					protected void writeStreamHeader() throws IOException {
-//						return;
-//					}
-//				};
-//			} else
-//			{
-//				objectOutputS = new ObjectOutputStream(new FileOutputStream(productFile, isAppendableProductFile));
-				raf = new RandomAccessFile(productFile, "w");
-//			}
-		} catch (FileNotFoundException e) {
-			System.out.println("resetOutputStream method Exception: " + e.getMessage());
-		} catch (IOException e) {
-			System.out.println("resetOutputStream method Exception: " + e.getMessage());
-		}
-	}
-
-	// load Products from file and insert to the hashMap:
-	public boolean initProductsFromFile() {
-		try {
-			ArrayList<byte[]> tempByte = new ArrayList<>();
-			tempByte.add(new byte[insertProductView.getTextFieldList().get(0).getText().length()]);
-			tempByte.add(new byte[insertProductView.getTextFieldList().get(1).getText().length()]);
-			tempByte.add(new byte[insertProductView.getTextFieldList().get(2).getText().length()]);
-			tempByte.add(new byte[insertProductView.getTextFieldList().get(3).getText().length()]);
-			tempByte.add(new byte[insertProductView.getTextFieldList().get(4).getText().length()]);
-			tempByte.add(new byte[insertProductView.getTextFieldList().get(5).getText().length()]);
-			tempByte.add(new byte[(""+insertProductView.getSaleUpdate()).length()]);
-			if(raf.length() == 0)
-				resetInputStream();
-			while (raf.read() != -1) {
-				readProduct(raf, tempByte);
-			}
-			return true;
-		} catch (IOException e1) {
-			System.out.println("maybe the problem in the objectInputS");
-		} catch (Exception e) {
-			System.out.println("No product to load");
-		}
-		return false;
-	}
-
-	
-	public void readProduct(RandomAccessFile raf,ArrayList<byte[]> tempArr)
-	{
-		String name = new String(tempArr.get(0));
-		String costM = new String(tempArr.get(1));
-		String costC = new String(tempArr.get(2));
-		String barCode = new String(tempArr.get(3));
-		String clientName = new String(tempArr.get(4));
-		String clientPhone = new String(tempArr.get(5));
-		boolean saleUpdate = Boolean.parseBoolean(new String(tempArr.get(6)));
-		Client c = new Client(clientName, clientPhone, saleUpdate);
-		Product product = new Product(name, Integer.parseInt(costM), Integer.parseInt(costC), c, barCode);
-		storeM.addProduct(product);
-	}
-
-	public void loadProductsToPage() throws Exception {
+	public void loadProductsToPage() throws Exception { // show products from Map
 		int selected = storeM.getSelectedSort();
 		switch (selected) {
 		case 0:
@@ -331,40 +273,6 @@ public class ControllerProcess {
 		insertProductView.clearTextFieldList();
 		insertProductView.clearSaleUpdate();
 	}
-
-	public void saveProductsToFile() throws Exception {
-		int selected = storeM.getSelectedSort();
-		switch (selected) {
-		case 0:
-			for (Map.Entry<String, Product> product : storeM.getSortedByAscending().entrySet()) {
-				writeProduct(raf, product);
-			}
-			break;
-		case 1:
-			for (Map.Entry<String, Product> product : storeM.getSortedByDescending().entrySet()) {
-				writeProduct(raf, product);
-			}
-			break;
-		case 2:
-			for (Map.Entry<String, Product> product : storeM.getSortedByInserting().entrySet()) {
-				writeProduct(raf, product);
-			}
-			break;
-		default:
-			throw new Exception();
-		}
-	}
-	
-	public void writeProduct(RandomAccessFile raf, Map.Entry<String, Product> product) throws IOException
-	{
-		raf.writeUTF(product.getValue().getName());
-		raf.writeUTF(""+product.getValue().getCostPriceManager());
-		raf.writeUTF(""+product.getValue().getCostPriceClient());
-		raf.writeUTF(product.getValue().getBarCode());
-		raf.writeUTF(product.getValue().getClient().getName());
-		raf.writeUTF(product.getValue().getClient().getPhoneNumber());
-		raf.writeUTF(""+product.getValue().getClient().isSaleUpdate());
-	}
 	
 	public void setSort() {
 		storeM.setSelectedSort(storeView.getSortChoiceBox().getSelectionModel().getSelectedIndex());
@@ -401,7 +309,7 @@ public class ControllerProcess {
 		return insertFailedAlert;
 	}
 
-	public StoreManagment getStoreM() {
+	public StoreManagement getStoreM() {
 		return storeM;
 	}
 

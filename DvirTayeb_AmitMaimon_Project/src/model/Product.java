@@ -1,8 +1,9 @@
 package model;
-
 import java.io.Serializable;
 
+
 public class Product implements Serializable, Comparable<Product> {
+
 	/**
 	 * 
 	 */
@@ -75,9 +76,7 @@ public class Product implements Serializable, Comparable<Product> {
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Product: name=" + name + ", costPriceManager=" + costPriceManager + ", costPriceClient="
-				+ costPriceClient + ", client=" + client + ", barCode=" + barCode + "\n");
-		return builder.toString();
+		return "Product: name=" + name + ", costPriceManager=" + costPriceManager + ", costPriceClient="
+				+ costPriceClient + ", client=" + client + ", barCode=" + barCode + "\n";
 	}
 }

@@ -25,12 +25,12 @@ public class CareTaker {
 		productMap.remove(index);
 	}
 	
-	public void print() {
-		Iterator<Map.Entry<String, ProductMemento>> iterator = productMap.entrySet().iterator();
-		System.out.println("Saves:");
-		while (iterator.hasNext()) {
-			System.out.println(iterator);
-			Map.Entry<String, ProductMemento> entry = (Map.Entry<String, ProductMemento>) iterator.next();
-		}
-	}
+//	public void print() {
+//		Iterator<Map.Entry<String, ProductMemento>> iterator = productMap.entrySet().iterator();
+//		System.out.println("Saves:");
+//		while (iterator.hasNext()) {
+//			System.out.println(iterator);
+//			Map.Entry<String, ProductMemento> entry = (Map.Entry<String, ProductMemento>) iterator.next();
+//		}
+//	}
 }

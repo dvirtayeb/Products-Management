@@ -1,67 +1,73 @@
 package model;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Iterator;
-import java.util.Map;
 
-public class FileIterator implements Iterable<Product> {
+public class FileIterator implements Iterator<Product> {
 
 	private RandomAccessFile raf;
-	private File productFile;
-	/* private long currentIndex; */
 	private long currentSize;
+	private long currentIndex;
+	private long lastIndex;
+	private long prevIndex;
 
-	public FileIterator(File productFile, RandomAccessFile raf) throws IOException {
-		this.productFile = productFile;
+	public FileIterator(RandomAccessFile raf) throws IOException {
 		this.raf = raf;
-		currentSize = raf.length();
-
+		if (this.raf != null) {
+			currentSize = this.raf.length();
+			currentIndex = 0;
+			lastIndex = -1;
+			prevIndex = 0;
+		}
 	}
 
 	@Override
-	public Iterator<Product> iterator() {
-		
-		Iterator<Product> it = null;
+	public boolean hasNext() {
+		return currentIndex < currentSize;
+	}
+
+	@Override
+	public Product next() {
+		String productString[] = new String[7];
 		try {
-			it = new Iterator<Product>() {
-
-				private long currentIndex = raf.getFilePointer();
-
-				@Override
-				public boolean hasNext() {
-					return currentIndex < currentSize;
-				}
-
-				@Override
-				public Product next() {
-					String prodString[] = new String[7];
-					try {
-						for (int i = 0; i < prodString.length; i++) {
-							prodString[i] = raf.readUTF();
-						}
-						Client client = new Client(prodString[4], prodString[5], Boolean.parseBoolean(prodString[6]));
-						return new Product(prodString[0], Integer.parseInt(prodString[1]),
-								Integer.parseInt(prodString[2]), client, prodString[3]);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-
-					}
-					return null;
-				}
-
-				@Override
-				public void remove() {
-					throw new UnsupportedOperationException();
-				}
-
-			};
+			raf.seek(currentIndex);
+			prevIndex = currentIndex;
+			for (int i = 0; i < productString.length; i++) {
+				int num = raf.read();
+				String lenNum = "" + num;
+				byte[] data = new byte[num];
+				raf.read(data);
+				productString[i] = new String(data);
+				currentIndex += productString[i].length() + lenNum.length();
+			}
+			Client client = new Client(productString[4], productString[5], Boolean.parseBoolean(productString[6]));
+			return new Product(productString[0], Integer.parseInt(productString[1]), Integer.parseInt(productString[2]),
+					client, productString[3]);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return it;
+		return null;
 	}
+
+	@Override
+	public void remove() {
+		try {
+			byte[] restData = new byte[(int) (raf.length() - raf.getFilePointer())];
+			raf.read(restData);
+			String restProducts = new String(restData);
+			long newSize = prevIndex + restProducts.length();
+			raf.seek(prevIndex);
+			raf.setLength(newSize);
+			currentSize = raf.length();
+			raf.write(restProducts.getBytes());
+		} catch(Exception e) {
+			
+		}
+	}
+
+	public void setCurrentSize(long currentSize) {
+		this.currentSize = currentSize;
+	}
+
 }

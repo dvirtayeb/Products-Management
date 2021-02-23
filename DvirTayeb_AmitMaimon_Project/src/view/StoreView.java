@@ -17,9 +17,11 @@ import javafx.stage.Stage;
 
 public class StoreView {
 	private BorderPane bp;
-	Button btnShowProducts;
-	Button btnInsertProduct;
-	ChoiceBox<String> sortChoiceBox;
+	private Button btnShowProducts;
+	private Button btnInsertProduct;
+	private Button btnDeleteProduct;
+	private ChoiceBox<String> sortChoiceBox;
+	
 	public StoreView(Stage primaryStage) {
 		String background = "-fx-background-color: #FFFFFF";
 		// Title:
@@ -39,6 +41,10 @@ public class StoreView {
 		HBox hbInsertInfo = new HBox(btnInsertProduct);
 		HBox.setMargin(btnInsertProduct, new Insets(40, 0, 0, 0));
 		hbInsertInfo.setAlignment(Pos.TOP_CENTER);
+		btnDeleteProduct = new Button("Delete Product");
+		HBox hbDeleteProduct = new HBox(btnDeleteProduct);
+		HBox.setMargin(btnDeleteProduct, new Insets(40, 0, 0, 0));
+		hbDeleteProduct.setAlignment(Pos.TOP_CENTER);
 		VBox vbTitle = new VBox();
 		vbTitle.getChildren().addAll(hbTitle);
 		vbTitle.setAlignment(Pos.TOP_CENTER);
@@ -56,7 +62,7 @@ public class StoreView {
         HBox.setMargin(sortChoiceBox, new Insets(40, 0, 0, 0));
     	
 		VBox vbCenter = new VBox();
-		vbCenter.getChildren().addAll(hbShowInfo, hbInsertInfo, hbSortBox);
+		vbCenter.getChildren().addAll(hbShowInfo, hbInsertInfo, hbSortBox, hbDeleteProduct);
 		// BorderPane:
 		bp = new BorderPane();
 		bp.setStyle(background);
@@ -90,6 +96,10 @@ public class StoreView {
 
 	public ChoiceBox<String> getSortChoiceBox() {
 		return sortChoiceBox;
+	}
+
+	public Button getBtnDelete() {
+		return btnDeleteProduct;
 	}
 	
 	

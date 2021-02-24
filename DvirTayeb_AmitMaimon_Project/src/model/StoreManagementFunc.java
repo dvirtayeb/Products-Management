@@ -29,7 +29,9 @@ public interface StoreManagementFunc extends Iterable<Product>, Serializable{
 
 	public void removeProduct(String key);
 	
-	public boolean removeProductFromFile(String barcode) throws IOException;
+	public boolean removeProductFromFile(String barcode) throws IOException, Exception;
+	
+	public void resetMap() throws IOException, Exception;
 
 	public Map<String, Product> getProductMap();
 }

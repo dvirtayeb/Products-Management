@@ -21,6 +21,7 @@ public class StoreView {
 	private Button btnInsertProduct;
 	private Button btnDeleteProduct;
 	private ChoiceBox<String> sortChoiceBox;
+	private Button btnDeleteAllProduct;
 	
 	public StoreView(Stage primaryStage) {
 		String background = "-fx-background-color: #FFFFFF";
@@ -45,6 +46,12 @@ public class StoreView {
 		HBox hbDeleteProduct = new HBox(btnDeleteProduct);
 		HBox.setMargin(btnDeleteProduct, new Insets(40, 0, 0, 0));
 		hbDeleteProduct.setAlignment(Pos.TOP_CENTER);
+		
+		btnDeleteAllProduct = new Button("Delete All Product");
+		HBox hbDeleteAllProduct = new HBox(btnDeleteAllProduct);
+		HBox.setMargin(btnDeleteAllProduct, new Insets(40, 0, 0, 0));
+		hbDeleteAllProduct.setAlignment(Pos.TOP_CENTER);
+		
 		VBox vbTitle = new VBox();
 		vbTitle.getChildren().addAll(hbTitle);
 		vbTitle.setAlignment(Pos.TOP_CENTER);
@@ -62,7 +69,7 @@ public class StoreView {
         HBox.setMargin(sortChoiceBox, new Insets(40, 0, 0, 0));
     	
 		VBox vbCenter = new VBox();
-		vbCenter.getChildren().addAll(hbShowInfo, hbInsertInfo, hbSortBox, hbDeleteProduct);
+		vbCenter.getChildren().addAll(hbShowInfo, hbInsertInfo, hbSortBox, hbDeleteProduct, hbDeleteAllProduct);
 		// BorderPane:
 		bp = new BorderPane();
 		bp.setStyle(background);
@@ -100,6 +107,10 @@ public class StoreView {
 
 	public Button getBtnDelete() {
 		return btnDeleteProduct;
+	}
+
+	public Button getBtnDeleteAll() {
+		return btnDeleteAllProduct;
 	}
 	
 	

@@ -7,13 +7,14 @@ import javafx.scene.control.ChoiceBox;
 
 
 public class StoreCommand implements Command{
-	Command showCommand, insertCommand, sortCommand, deleteCommand;
+	Command showCommand, insertCommand, sortCommand, deleteCommand, deleteAllCommand;
 
-	public StoreCommand(Command showCommand,Command insertCommand, Command sortCommand, Command deleteCommand) throws Exception {
+	public StoreCommand(Command showCommand,Command insertCommand, Command sortCommand, Command deleteCommand, Command deleteAllCommand) throws Exception {
 		this.showCommand = showCommand;
 		this.insertCommand = insertCommand;
 		this.sortCommand = sortCommand;
 		this.deleteCommand = deleteCommand;
+		this.deleteAllCommand = deleteAllCommand;
 	}
 
 	@Override
@@ -22,8 +23,10 @@ public class StoreCommand implements Command{
 			showCommand.execute(nameCommand, button, event);
 		else if(nameCommand.equals(((InsertCommand) insertCommand).getName()))
 			insertCommand.execute(nameCommand, button, event);
-		else
+		else if(nameCommand.equals(((DeleteCommand) deleteCommand).getName()))
 			deleteCommand.execute(nameCommand, button, event);
+		else
+			deleteAllCommand.execute(nameCommand, button, event);
 	}
 
 	@Override

@@ -19,7 +19,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 	TreeMap<String, Product> sortedByDescending;
 	LinkedHashMap<String, Product> sortedByInserting;
 	int selectedSort = -1;
-	
+
 	private File productFile;
 	private boolean isAppendableProductFile;
 	private RandomAccessFile raf;
@@ -30,7 +30,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		initAppandable();
 		raf = new RandomAccessFile(productFile, "rw");
 	}
-	
+
 	// create file:
 	private void initAppandable() {
 		productFile = new File("products.txt");
@@ -53,7 +53,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		}
 
 	}
-	
+
 	public void saveProductsToFile() throws Exception {
 		raf.seek(0);
 		lastLocation = 0;
@@ -80,15 +80,16 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 			throw new Exception();
 		}
 	}
-	
-	public void writeProduct(Map.Entry<String, Product> product) throws IOException
-	{
-		String name = product.getValue().getName(), priceM = ""+product.getValue().getCostPriceManager(),
-				priceC = ""+product.getValue().getCostPriceClient(), barcode = product.getValue().getBarCode(),
-				clientName = product.getValue().getClient().getName(), phone = product.getValue().getClient().getPhoneNumber(),
-				saleUpdate = ""+product.getValue().getClient().isSaleUpdate();
-		lastLocation += 2*(name.getBytes().length+priceM.getBytes().length+priceC.getBytes().length
-				+barcode.getBytes().length+clientName.getBytes().length+phone.getBytes().length+saleUpdate.getBytes().length);
+
+	public void writeProduct(Map.Entry<String, Product> product) throws IOException {
+		String name = product.getValue().getName(), priceM = "" + product.getValue().getCostPriceManager(),
+				priceC = "" + product.getValue().getCostPriceClient(), barcode = product.getValue().getBarCode(),
+				clientName = product.getValue().getClient().getName(),
+				phone = product.getValue().getClient().getPhoneNumber(),
+				saleUpdate = "" + product.getValue().getClient().isSaleUpdate();
+		Client c = new Client(clientName, phone, Boolean.parseBoolean(saleUpdate));
+		Product p = new Product(name,Integer.parseInt(priceM), Integer.parseInt(priceC), c, barcode);
+		lastLocation += p.toStringForFile().length();
 		raf.write(name.getBytes().length);
 		raf.write(name.getBytes());
 		raf.write(priceM.getBytes().length);
@@ -104,13 +105,13 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		raf.write(saleUpdate.getBytes().length);
 		raf.write(saleUpdate.getBytes());
 	}
-	
+
 	public boolean initProductsFromFile() {
 		try {
 			Iterator<Product> iterator = iterator();
 			while (raf.read() != -1) {
-				if(iterator.hasNext())
-					addProduct(iterator.next());	
+				if (iterator.hasNext())
+					addProduct(iterator.next());
 			}
 			return true;
 		} catch (IOException e1) {
@@ -120,8 +121,6 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		}
 		return false;
 	}
-	
-	
 
 	public TreeMap<String, Product> getSortedByAscending() {
 		return sortedByAscending;
@@ -165,6 +164,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 
 	public void addProduct(Product product) {
 		productMap.put(product.getBarCode(), product);
+
 	}
 
 	public void removeProduct(String key) {
@@ -190,23 +190,58 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		return null;
 	}
 
-	@Override
-	public boolean removeProductFromFile(String barcode) throws IOException {
+	public boolean removeProductFromFile(String barcode) throws IOException, Exception {
 		Iterator<Product> iterator = iterator();
 		raf.seek(0);
 		boolean hasDeleted = false;
-		while(raf.read() != -1)
-		{
-			if(iterator.hasNext()) {
+		while (raf.read() != -1) {
+			if (iterator.hasNext()) {
 				Product p = iterator.next();
-				if(p.getBarCode().equals(barcode)) {
+				if (p.getBarCode().equals(barcode)) {
 					iterator.remove();
-					removeProduct(barcode);
+					resetMap();
 					hasDeleted = true;
 					break;
 				}
 			}
 		}
-		return hasDeleted;		
+
+		return hasDeleted;
+	}
+
+	public void resetMap() throws IOException, Exception {
+		clearMap();
+		raf.seek(0);
+		initProductsFromFile();
+		sort();
+
+	}
+
+	public void removeAllProducts() throws IOException {
+		Iterator<Product> iterator = iterator();
+		raf.seek(0);
+		while (raf.read() != -1) {
+			if (iterator.hasNext()) {
+				iterator.remove();
+			}
+		}
+		clearMap();
+	}
+
+	public void clearMap() {
+		switch (selectedSort) {
+		case 0:
+			sortedByAscending.clear();
+			break;
+		case 1:
+			sortedByDescending.clear();
+			break;
+		case 2:
+			sortedByInserting.clear();
+			break;
+		default:
+			break;
+		}
+		productMap.clear();
 	}
 }

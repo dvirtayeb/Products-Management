@@ -62,12 +62,8 @@ public class FileIterator implements Iterator<Product> {
 			currentSize = raf.length();
 			raf.write(restProducts.getBytes());
 		} catch(Exception e) {
-			
+			e.printStackTrace();
 		}
-	}
-
-	public void setCurrentSize(long currentSize) {
-		this.currentSize = currentSize;
 	}
 
 }

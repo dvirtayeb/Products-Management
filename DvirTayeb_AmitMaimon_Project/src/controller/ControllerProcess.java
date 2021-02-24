@@ -46,6 +46,7 @@ public class ControllerProcess {
 	private ShowCommand showCommand;
 	private StoreCommand storeCommand;
 	private DeleteCommand deleteCommand;
+	private DeleteAllCommand deleteAllCommand;
 
 
 	public ControllerProcess(StoreManagement storeManagement, StoreView storeView, Stage stage) throws Exception {
@@ -54,8 +55,8 @@ public class ControllerProcess {
 		// Alerts:
 		sortErrorAlert = new Alert(AlertType.INFORMATION, "Please choose Sort", ButtonType.OK);
 		sortErrorAlert.setHeaderText("Cannot open Insert Prodcut!");
-		filexistsAlert = new Alert(AlertType.INFORMATION, "to see them click on 'Show Products'", ButtonType.OK);
-		filexistsAlert.setHeaderText("There is Products already in the System");
+		filexistsAlert = new Alert(AlertType.INFORMATION, "the products you can see in the 'Show Products'", ButtonType.OK);
+		filexistsAlert.setHeaderText("File exists!");
 		insertSuccesAlert = new Alert(AlertType.INFORMATION, "The Product Added!", ButtonType.OK);
 		insertFailedAlert = new Alert(AlertType.INFORMATION, "The Product Not Added!", ButtonType.OK);
 		deleteSuccesAlert = new Alert(AlertType.INFORMATION, "The Product Not found!", ButtonType.OK);
@@ -65,11 +66,13 @@ public class ControllerProcess {
 		insertCommand = new InsertCommand("Insert", storeView);
 		sortCommand = new ChooseSortCommand("Sort", storeView);
 		deleteCommand = new DeleteCommand("Delete", storeView);
-		storeCommand = new StoreCommand(showCommand,insertCommand, sortCommand, deleteCommand);
+		deleteAllCommand = new DeleteAllCommand("DeleteAll", storeView);
+		storeCommand = new StoreCommand(showCommand,insertCommand, sortCommand, deleteCommand, deleteAllCommand);
 
 		if (storeM.isAppendableProductFile() != false) {
 			// read from file and save to hashMap
-			storeM.initProductsFromFile();
+			boolean check = storeM.initProductsFromFile();
+			System.out.println(check);
 			filexistsAlert.show();
 		}
 		// Show Products: (work only when clicked on page)
@@ -138,10 +141,13 @@ public class ControllerProcess {
 							{
 								deleteFailedAlert.show();
 							}else {
+								deleteSuccesAlert.setContentText("The Product deleted!");
 								deleteSuccesAlert.show();
 							}
 						} catch (IOException e1) {
 							e1.printStackTrace();
+						} catch (Exception e2) {
+							e2.printStackTrace();
 						}
 					});
 					
@@ -154,6 +160,23 @@ public class ControllerProcess {
 		};
 		storeCommand.execute(deleteCommand.getName(), storeView.getBtnDelete(), eventDeleteProduct);
 		
+		// Delete All Products:
+		EventHandler<ActionEvent> eventDeleteAllProduct = new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent arg0) {
+				try {
+					storeM.removeAllProducts();
+					deleteSuccesAlert.setContentText("All Products deleted!");
+					deleteSuccesAlert.show();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+			}
+			
+		};
+		storeCommand.execute(deleteAllCommand.getName(), storeView.getBtnDeleteAll(), eventDeleteAllProduct);
 		// Selected Sort: (work only when selected)
 		EventHandler<ActionEvent> eventSort = new EventHandler<ActionEvent>() {
 			@Override

@@ -1,6 +1,6 @@
 package model;
-import java.io.Serializable;
 
+import java.io.Serializable;
 
 public class Product implements Serializable, Comparable<Product> {
 
@@ -14,6 +14,7 @@ public class Product implements Serializable, Comparable<Product> {
 	private Client client;
 //	private Barcode barCode; // need new Class for this
 	private String barCode;
+
 	public Product(String name, int costPriceManager, int costPriceClient, Client client, String barCode) {
 		this.name = name;
 		this.costPriceManager = costPriceManager;
@@ -62,11 +63,10 @@ public class Product implements Serializable, Comparable<Product> {
 	public void setClient(Client client) {
 		this.client = client;
 	}
-	
+
 	public ProductMemento saveToMememnto() {
 		return new ProductMemento(this);
 	}
-
 
 	@Override
 	public int compareTo(Product product) {
@@ -78,5 +78,13 @@ public class Product implements Serializable, Comparable<Product> {
 	public String toString() {
 		return "Product: name=" + name + ", costPriceManager=" + costPriceManager + ", costPriceClient="
 				+ costPriceClient + ", client=" + client + ", barCode=" + barCode + "\n";
+	}
+
+	public String toStringForFile() {
+		String costC = "" + costPriceClient;
+		String costM = "" + costPriceManager;
+		return name.length() + name + costM.length() + costPriceManager + costC.length() + costPriceClient
+				+ client.getName().length() + client.getName() + client.getPhoneNumber().length()
+				+ client.getPhoneNumber() + barCode.length() + barCode;
 	}
 }

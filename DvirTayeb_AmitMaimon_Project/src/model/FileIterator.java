@@ -9,7 +9,6 @@ public class FileIterator implements Iterator<Product> {
 	private RandomAccessFile raf;
 	private long currentSize;
 	private long currentIndex;
-	private long lastIndex;
 	private long prevIndex;
 
 	public FileIterator(RandomAccessFile raf) throws IOException {
@@ -17,7 +16,6 @@ public class FileIterator implements Iterator<Product> {
 		if (this.raf != null) {
 			currentSize = this.raf.length();
 			currentIndex = 0;
-			lastIndex = -1;
 			prevIndex = 0;
 		}
 	}

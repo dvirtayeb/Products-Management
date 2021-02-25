@@ -14,14 +14,14 @@ import java.util.TreeMap;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 
-public class StoreManagement implements StoreManagementFunc, Comparator<Product>,Observable {
+public class StoreManagement implements StoreManagementFunc, Comparator<Product>, Observable {
 
 	private static final long serialVersionUID = 1L;
-	
+
 	Map<String, Product> productMap;
 	private CareTaker ct;
 	private OriginatorClass originC;
-	
+
 	TreeMap<String, Product> sortedByAscending;
 	TreeMap<String, Product> sortedByDescending;
 	LinkedHashMap<String, Product> sortedByInserting;
@@ -36,8 +36,8 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		productMap = new HashMap<String, Product>();
 		initAppandable();
 		raf = new RandomAccessFile(productFile, "rw");
-		originC=new OriginatorClass();
-		ct=new CareTaker();
+		originC = new OriginatorClass();
+		ct = new CareTaker();
 	}
 
 	// create file:
@@ -95,7 +95,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 				phone = product.getValue().getClient().getPhoneNumber(),
 				saleUpdate = "" + product.getValue().getClient().isSaleUpdate();
 		Client c = new Client(clientName, phone, Boolean.parseBoolean(saleUpdate));
-		Product p = new Product(name,Integer.parseInt(priceM), Integer.parseInt(priceC), c, barcode);
+		Product p = new Product(name, Integer.parseInt(priceM), Integer.parseInt(priceC), c, barcode);
 		fileSize += p.toStringForFile().length();
 		raf.write(name.getBytes().length);
 		raf.write(name.getBytes());
@@ -122,7 +122,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 			}
 			return true;
 		} catch (IOException e1) {
-			System.out.println("maybe the problem in the objectInputS");
+			e1.printStackTrace();
 		} catch (Exception e) {
 			System.out.println("No product to load");
 		}
@@ -173,7 +173,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		productMap.put(product.getBarCode(), product);
 		originC.setProduct(new ProductMemento(product));
 		ct.save(originC.save());
-		
+
 	}
 
 	public void removeProduct(String key) {
@@ -236,6 +236,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		}
 		clearMap();
 	}
+
 	public boolean deleteLastInsertion() throws Exception {
 		originC.getProductFromMemento(ct.restore());
 		ProductMemento pm = originC.getProductMemento();
@@ -260,29 +261,38 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		}
 		productMap.clear();
 	}
-	
+
 	public String showProfits() {
-		StringBuffer sb=new StringBuffer("");
-		int totalProfit=0;
+		StringBuffer sb = new StringBuffer("");
+		int totalProfit = 0;
 		for (Map.Entry<String, Product> product : productMap.entrySet()) {
-			Product prod=product.getValue();
-			int profit = prod.getCostPriceClient()-prod.getCostPriceManager();
-			totalProfit+=profit;
-			sb.append("Profit on "+prod.getName()+": "+profit +"\n");
+			Product prod = product.getValue();
+			int profit = prod.getCostPriceClient() - prod.getCostPriceManager();
+			totalProfit += profit;
+			sb.append("Profit on " + prod.getName() + ": " + profit + "\n");
 		}
-		sb.append("Total profit for the store: "+totalProfit);
+		sb.append("Total profit for the store: " + totalProfit);
 		return sb.toString();
 	}
 
+	public String searchProduct(String barcode) {
+		for (Map.Entry<String, Product> product : productMap.entrySet()) {
+			Product prod = product.getValue();
+			if(prod.getBarCode().equals(barcode)) {
+				return prod.toString();
+			}
+		}
+		return "Product not found!";
+	}
 	@Override
 	public void addListener(InvalidationListener arg0) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void removeListener(InvalidationListener arg0) {
 		// TODO Auto-generated method stub
-		
+
 	}
 }

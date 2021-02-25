@@ -7,25 +7,29 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
+
+import commands.ChooseSortCommand;
+import commands.DeleteAllProductsCommand;
+import commands.DeleteCommand;
+import commands.DeleteLastProductCommand;
+import commands.InsertCommand;
+import commands.SearchCommand;
+import commands.ShowCommand;
+import commands.ShowProfitsCommand;
+import commands.StoreCommand;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
-import model.Client;
-import model.DeleteAllProductsCommand;
-import model.DeleteCommand;
-import model.DeleteLastProductCommand;
-import model.InsertCommand;
-import model.Product;
-import model.ShowCommand;
-import model.StoreCommand;
 import model.StoreManagement;
-import model.ShowProfitsCommand;
+import model.Product;
+import model.Client;
 import model.Barcode;
-import model.ChooseSortCommand;
 import view.ProductView;
+import view.SearchProductView;
 import view.ShowProfitsView;
 import view.DeleteProductView;
 import view.InsertProductView;
@@ -38,6 +42,7 @@ public class ControllerProcess {
 
 	private InsertProductView insertProductView;
 	private DeleteProductView deleteProductView;
+	private SearchProductView searchProduct;
 	private static Alert insertSuccesAlert;
 	private static Alert insertFailedAlert;
 	private static Alert filexistsAlert;
@@ -53,6 +58,7 @@ public class ControllerProcess {
 	private DeleteLastProductCommand deleteLastProductCommand;
 	private DeleteAllProductsCommand deleteAllCommand;
 	private ShowProfitsCommand showProfitsCommand;
+	private SearchCommand searchCommand;
 
 	public ControllerProcess(StoreManagement storeManagement, StoreView storeView, Stage stage) throws Exception {
 		storeM = storeManagement;
@@ -65,10 +71,11 @@ public class ControllerProcess {
 		filexistsAlert.setHeaderText("File exists!");
 		insertSuccesAlert = new Alert(AlertType.INFORMATION, "The Product Added!", ButtonType.OK);
 		insertFailedAlert = new Alert(AlertType.INFORMATION, "The Product Not Added!", ButtonType.OK);
-		deleteSuccesAlert = new Alert(AlertType.INFORMATION, "The Product Not found!", ButtonType.OK);
-		deleteFailedAlert = new Alert(AlertType.INFORMATION, "The Product Deleted!", ButtonType.OK);
+		deleteFailedAlert = new Alert(AlertType.INFORMATION, "The Product Not found!", ButtonType.OK);
+		deleteSuccesAlert = new Alert(AlertType.INFORMATION, "The Product Deleted!", ButtonType.OK);
 		// Commands:
 		showCommand = new ShowCommand("showCommand", storeView);
+		searchCommand = new SearchCommand("searchCommand", storeView);
 		insertCommand = new InsertCommand("insertCommand", storeView);
 		sortCommand = new ChooseSortCommand("sortCommand", storeView);
 		deleteCommand = new DeleteCommand("deleteCommand", storeView);
@@ -76,15 +83,15 @@ public class ControllerProcess {
 		deleteAllCommand = new DeleteAllProductsCommand("deleteAllCommand", storeView);
 		showProfitsCommand = new ShowProfitsCommand("showProfitsCommand", storeView);
 		storeCommand = new StoreCommand(showCommand, insertCommand, sortCommand, deleteCommand, deleteAllCommand,
-				showProfitsCommand, deleteLastProductCommand);
+				showProfitsCommand, deleteLastProductCommand, searchCommand);
 
+		// check if file exists:
 		if (storeM.isAppendableProductFile() != false) {
 			// read from file and save to hashMap
-			boolean check = storeM.initProductsFromFile();
-			// System.out.println(check);
+			storeM.initProductsFromFile();
 			filexistsAlert.show();
 		}
-		// Show Products: (work only when clicked on page)
+		// Show Products:
 		EventHandler<ActionEvent> eventShowProducts = new EventHandler<ActionEvent>() {
 
 			@Override
@@ -99,7 +106,29 @@ public class ControllerProcess {
 		};
 		storeCommand.execute(showCommand.getName(), storeView.getBtnShow(), eventShowProducts);
 
-		// Insert Product: (work only when clicked on page)
+		// Search Product and Show:
+		EventHandler<ActionEvent> eventSearchProduct = new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent arg0) {
+				try {
+					searchProduct = new SearchProductView(new Stage());
+					searchProduct.getbtnSearch().setOnAction(e -> {
+						try {
+							String product = storeM.searchProduct(searchProduct.getTf().getText());
+							searchProduct.getStrText().setText(product);
+							searchProduct.getTf().clear();
+						} catch (Exception e1) {
+							e1.printStackTrace();
+						}
+					});
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		storeCommand.execute(showCommand.getName(), storeView.getBtnShowSpecificProduct(), eventSearchProduct);
+
+		// Insert Product:
 		EventHandler<ActionEvent> eventInsertProducts = new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent arg0) {
@@ -109,12 +138,10 @@ public class ControllerProcess {
 						insertProductView.getSave().setOnAction(e -> {
 							try {
 								if (saveProductFromPage()) {
-									// ---------------> memento undo kapara!.
 									storeView.getBtnDeleteLastProduct().setDisable(false);
 									storeM.sort();
 									storeM.saveProductsToFile();
 									insertSuccesAlert.show();
-									// clear the page:
 									cleanPage();
 								} else {
 									cleanPage();
@@ -148,10 +175,9 @@ public class ControllerProcess {
 					deleteProductView.getDelete().setOnAction(e -> {
 						try {
 							if (storeM.removeProductFromFile(deleteProductView.getTf().getText())) {
-								deleteFailedAlert.show();
-							} else {
-								deleteSuccesAlert.setContentText("The Product deleted!");
 								deleteSuccesAlert.show();
+							} else {
+								deleteFailedAlert.show();
 							}
 						} catch (IOException e1) {
 							e1.printStackTrace();
@@ -174,13 +200,13 @@ public class ControllerProcess {
 			@Override
 			public void handle(ActionEvent event) {
 				try {
-					if(storeM.deleteLastInsertion())
+					if (storeM.deleteLastInsertion())
 						storeView.getBtnDeleteLastProduct().setDisable(true);
 					else
 						deleteFailedAlert.setContentText("Nothing inserted therefore Nothing to delete");
 					deleteFailedAlert.show();
 				} catch (Exception e) {
-					
+
 					e.printStackTrace();
 				}
 			}
@@ -206,7 +232,8 @@ public class ControllerProcess {
 
 		};
 		storeCommand.execute(deleteAllCommand.getName(), storeView.getBtnDeleteAll(), eventDeleteAllProduct);
-		// Selected Sort: (work only when selected)
+
+		// Selected Sort:
 		EventHandler<ActionEvent> eventSort = new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent arg0) {
@@ -219,6 +246,7 @@ public class ControllerProcess {
 		};
 		storeCommand.execute(sortCommand.getName(), storeView.getSortChoiceBox(), eventSort);
 
+		// Show Profit:
 		EventHandler<ActionEvent> eventShowProfit = new EventHandler<ActionEvent>() {
 
 			@Override
@@ -233,37 +261,36 @@ public class ControllerProcess {
 
 	}
 
+	// ### Functions ###
+
 	public void loadProductsToPage() throws Exception { // show products from Map
 		int selected = storeM.getSelectedSort();
 		switch (selected) {
 		case 0:
 			storeM.sort();
-			for (Map.Entry<String, Product> product : storeM.getSortedByAscending().entrySet()) {
-				showProducts.getTableViewProducts().getItems().add(product.getValue());
-				showProducts.getTableViewClients().getItems().add(product.getValue().getClient());
-			}
+			for (Map.Entry<String, Product> product : storeM.getSortedByAscending().entrySet())
+				addProductToTableView(product);
 			break;
 		case 1:
 			storeM.sort();
-			for (Map.Entry<String, Product> product : storeM.getSortedByDescending().entrySet()) {
-				showProducts.getTableViewProducts().getItems().add(product.getValue());
-				showProducts.getTableViewClients().getItems().add(product.getValue().getClient());
-			}
+			for (Map.Entry<String, Product> product : storeM.getSortedByDescending().entrySet())
+				addProductToTableView(product);
 			break;
 		case 2:
 			storeM.sort();
-			for (Map.Entry<String, Product> product : storeM.getSortedByInserting().entrySet()) {
-				showProducts.getTableViewProducts().getItems().add(product.getValue());
-				showProducts.getTableViewClients().getItems().add(product.getValue().getClient());
-			}
+			for (Map.Entry<String, Product> product : storeM.getSortedByInserting().entrySet())
+				addProductToTableView(product);
 			break;
 
 		default:
-			for (Map.Entry<String, Product> product : storeM.getProductMap().entrySet()) {
-				showProducts.getTableViewProducts().getItems().add(product.getValue());
-				showProducts.getTableViewClients().getItems().add(product.getValue().getClient());
-			}
+			for (Map.Entry<String, Product> product : storeM.getProductMap().entrySet())
+				addProductToTableView(product);
 		}
+	}
+
+	public void addProductToTableView(Map.Entry<String, Product> product) {
+		showProducts.getTableViewProducts().getItems().add(product.getValue());
+		showProducts.getTableViewClients().getItems().add(product.getValue().getClient());
 	}
 
 	// save Products from the 'Insert Page' into the hashMap:
@@ -304,33 +331,34 @@ public class ControllerProcess {
 	// read the values from App and insert to temp Arrays:
 	private void addTotempArr(ArrayList<String> tempProduct, ArrayList<Integer> tempPrice, int costPManager,
 			int costPClient) throws Exception {
-		for (int i = 0; i < insertProductView.getTextFieldList().size(); i++) {
-			String barcode = insertProductView.getTextFieldList().get(3).getText();
-			String str = insertProductView.getTextList().get(i).getText();
-			String strField = insertProductView.getTextFieldList().get(i).getText();
+		ArrayList<TextField> listTF = insertProductView.getTextFieldList();
+		for (int i = 0; i < listTF.size(); i++) {
+			String barcode = listTF.get(3).getText();
+			String strText = insertProductView.getTextList().get(i).getText();
+			String strField = listTF.get(i).getText();
 			if (barcode == null || barcode.equals("")) {
 				throw new Exception("you didn't insert barCode correctly");
-			} else if ((strField.equals("")) && (str.equals("Cost Price To manager:  "))) {
+			} else if ((strField.equals("")) && (strText.equals("Cost Price To manager:  "))) {
 				costPManager = 0;
 				tempPrice.add(costPManager);
 				tempProduct.add("0");
-			} else if ((strField.equals("")) && (str.equals("Cost Price To Client:  "))) {
+			} else if ((strField.equals("")) && (strText.equals("Cost Price To Client:  "))) {
 				costPClient = 0;
 				tempPrice.add(costPClient);
 				tempProduct.add("0");
 			} else {
-				if (str.equals("Cost Price To manager:  ")) {
-					costPManager = Integer.parseInt(insertProductView.getTextFieldList().get(i).getText());
+				if (strText.equals("Cost Price To manager:  ")) {
+					costPManager = Integer.parseInt(strField);
 					if (costPManager < 0)
 						throw new NumberFormatException();
 					tempPrice.add(costPManager);
-				} else if (str.equals("Cost Price To Client:  ")) {
-					costPClient = Integer.parseInt(insertProductView.getTextFieldList().get(i).getText());
+				} else if (strText.equals("Cost Price To Client:  ")) {
+					costPClient = Integer.parseInt(strField);
 					if (costPClient < 0)
 						throw new NumberFormatException();
 					tempPrice.add(costPClient);
 				}
-				tempProduct.add(insertProductView.getTextFieldList().get(i).getText());
+				tempProduct.add(strField);
 
 			}
 		}

@@ -17,6 +17,8 @@ import javafx.stage.Stage;
 
 public class StoreView {
 	private BorderPane bp;
+	
+	//btns
 	private Button btnShowProducts;
 	private Button btnInsertProduct;
 	private Button btnDeleteProduct;
@@ -24,6 +26,9 @@ public class StoreView {
 	private Button btnDeleteLastProduct;
 	private Button btnShowProfits;
 	private Button btnShowSpecificProduct;
+	private Button btnDiscountMessage;
+	private Button btnShowIntrestedClients;
+	
 	private ChoiceBox<String> sortChoiceBox;
 
 	public StoreView(Stage primaryStage) {
@@ -72,7 +77,18 @@ public class StoreView {
 		HBox.setMargin(btnDeleteLastProduct, new Insets(20, 0, 0, 0));
 		hbDeleteLastProduct.setAlignment(Pos.TOP_CENTER);
 		btnDeleteLastProduct.setDisable(true);
-
+		
+		btnDiscountMessage= new Button("Send Discount Message");
+		HBox hbDiscountMessage = new HBox(btnDiscountMessage);
+		HBox.setMargin(btnDiscountMessage, new Insets(20, 0, 0, 0));
+		hbDiscountMessage.setAlignment(Pos.TOP_CENTER);
+		
+		btnShowIntrestedClients= new Button("Show Clients Intrested in Discounts");
+		HBox hbShowIntrestedClients = new HBox(btnShowIntrestedClients);
+		HBox.setMargin(btnShowIntrestedClients, new Insets(20, 0, 0, 0));
+		hbShowIntrestedClients.setAlignment(Pos.TOP_CENTER);
+		btnShowIntrestedClients.setDisable(true);
+		
 		VBox vbTitle = new VBox();
 		vbTitle.getChildren().addAll(hbTitle);
 		vbTitle.setAlignment(Pos.TOP_CENTER);
@@ -91,7 +107,7 @@ public class StoreView {
 
 		VBox vbCenter = new VBox();
 		vbCenter.getChildren().addAll(hbShowInfo, hbShowSpecificInfo, hbInsertInfo, hbDeleteLastProduct, hbSortBox,
-				hbDeleteProduct, hbDeleteAllProduct, hbShowProfits);
+				hbDeleteProduct, hbDeleteAllProduct, hbShowProfits,hbDiscountMessage,hbShowIntrestedClients);
 		// BorderPane:
 		bp = new BorderPane();
 		bp.setStyle(background);
@@ -100,6 +116,14 @@ public class StoreView {
 		Scene scene = new Scene(bp, 700, 650);
 		primaryStage.setScene(scene);
 		primaryStage.show();
+	}
+
+	public Button getBtnDiscountMessage() {
+		return btnDiscountMessage;
+	}
+
+	public Button getBtnShowIntrestedClients() {
+		return btnShowIntrestedClients;
 	}
 
 	public Button getBtnDeleteLastProduct() {

@@ -44,4 +44,5 @@ public interface StoreManagementFunc extends Iterable<Product>, Serializable{
 	public String showProfits();
 	
 	public String searchProduct(String barcode);
+	boolean addObserver(Client o);
 }

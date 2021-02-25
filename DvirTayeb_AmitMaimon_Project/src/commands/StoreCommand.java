@@ -15,7 +15,7 @@ public class StoreCommand implements Command {
 
 	public StoreCommand(Command showCommand, Command insertCommand, Command sortCommand, Command deleteCommand,
 			Command deleteAllCommand, Command showProfitsCommand, Command deleteLastProductCommand,
-			Command searchProduct) throws Exception {
+			Command searchProduct,Command observerCommand) throws Exception {
 		commandMap = new HashMap<String, Command>();
 		commandMap.put("showCommand", showCommand);
 		commandMap.put("searchProduct", searchProduct);
@@ -25,6 +25,7 @@ public class StoreCommand implements Command {
 		commandMap.put("deleteAllCommand", deleteAllCommand);
 		commandMap.put("showProfitsCommand", showProfitsCommand);
 		commandMap.put("deleteLastProductCommand", deleteLastProductCommand);
+		commandMap.put("observerCommand", observerCommand);
 
 	}
 

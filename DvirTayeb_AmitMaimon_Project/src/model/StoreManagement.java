@@ -29,7 +29,8 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 	private boolean isAppendableProductFile;
 	private RandomAccessFile raf;
 	private int fileSize;
-	private ArrayList<Observer> clients;
+	private ArrayList<Client> clients;
+	private TheSender spamBot; // his name is spamBot because he is spamming people with discounts.
 	
 
 	public StoreManagement() throws FileNotFoundException {
@@ -38,7 +39,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		raf = new RandomAccessFile(productFile, "rw");
 		originC = new OriginatorClass();
 		ct = new CareTaker();
-		clients = new ArrayList<Observer>();
+		clients = new ArrayList<Client>();
 	}
 
 	// create file:
@@ -173,6 +174,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 	public void addProduct(Product product) {
 		productMap.put(product.getBarCode(), product);
 		originC.setProduct(new ProductMemento(product));
+		addObserver(product.getClient());
 		ct.save(originC.save());
 
 	}
@@ -287,31 +289,31 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 	}
 	
 	@Override
-	public void addObserver(model.Observer o) {
-		clients.add(o);
-	}
-
-	@Override
-	public void deleteObserver(model.Observer o) {
-		clients.remove(o);
-		
-	}
-
-	@Override
-	public void notifyObservers(Client client) {
-		for (Map.Entry<String, Product> product : productMap.entrySet()) {
-			Product prod = product.getValue();
-			if(prod.getClient().isSaleUpdate() == client.isSaleUpdate()) {
-//				TheSender.getSender().getMsg();  
-			}
+	public boolean addObserver(Client c) {
+		if(c.isSaleUpdate()) {
+			clients.add(c);
+			return true;
 		}
+		return false;
 	}
 
 	@Override
-	public void notifyObserver(model.Observer o, int index) {
-		o.getName(obs, client);
+	public void deleteObserver(Client c) {
+		clients.remove(c);
 		
 	}
+
+	@Override
+	public void notifyObservers(String msg) {
+		spamBot=TheSender.getSender();
+		spamBot.setMsg(msg);
+		for (int i = 0; i < clients.size(); i++) {
+			clients.get(i).update(this, spamBot);
+		}
+		
+	}
+
+
 	
 	
 }

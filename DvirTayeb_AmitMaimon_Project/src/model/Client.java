@@ -2,11 +2,11 @@ package model;
 
 import java.io.Serializable;
 
-public class Client implements Serializable{
+public class Client implements Observer{
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
+	//private static final long serialVersionUID = 1L;
 	private String name;
 	private String phoneNumber;
 	private boolean saleUpdate;
@@ -53,6 +53,14 @@ public class Client implements Serializable{
 		strBuffer.append("]");
 		return strBuffer.toString();
 	}
+
+	@Override
+	public void update(Observable obs, TheSender sender) {
+		if(obs instanceof StoreManagement) {
+			TheSender.addClient(name);
+		}
+	}
+		
 	
 	
 }

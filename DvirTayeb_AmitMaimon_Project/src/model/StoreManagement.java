@@ -11,10 +11,17 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class StoreManagement implements StoreManagementFunc, Comparator<Product> {
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
+
+public class StoreManagement implements StoreManagementFunc, Comparator<Product>,Observable {
 
 	private static final long serialVersionUID = 1L;
+	
 	Map<String, Product> productMap;
+	private CareTaker ct;
+	private OriginatorClass originC;
+	
 	TreeMap<String, Product> sortedByAscending;
 	TreeMap<String, Product> sortedByDescending;
 	LinkedHashMap<String, Product> sortedByInserting;
@@ -23,12 +30,14 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 	private File productFile;
 	private boolean isAppendableProductFile;
 	private RandomAccessFile raf;
-	private int lastLocation = 0;
+	private int fileSize;
 
 	public StoreManagement() throws FileNotFoundException {
 		productMap = new HashMap<String, Product>();
 		initAppandable();
 		raf = new RandomAccessFile(productFile, "rw");
+		originC=new OriginatorClass();
+		ct=new CareTaker();
 	}
 
 	// create file:
@@ -49,36 +58,34 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 			sortedByInserting.putAll(productMap);
 			break;
 		default:
-			throw new Exception();
+			break;
 		}
 
 	}
 
 	public void saveProductsToFile() throws Exception {
 		raf.seek(0);
-		lastLocation = 0;
+		fileSize = 0;
 		switch (selectedSort) {
 		case 0:
 			for (Map.Entry<String, Product> product : sortedByAscending.entrySet()) {
-				raf.setLength(lastLocation);
 				writeProduct(product);
 			}
 			break;
 		case 1:
 			for (Map.Entry<String, Product> product : sortedByDescending.entrySet()) {
-				raf.setLength(lastLocation);
 				writeProduct(product);
 			}
 			break;
 		case 2:
 			for (Map.Entry<String, Product> product : sortedByInserting.entrySet()) {
-				raf.setLength(lastLocation);
 				writeProduct(product);
 			}
 			break;
 		default:
 			throw new Exception();
 		}
+		raf.setLength(fileSize);
 	}
 
 	public void writeProduct(Map.Entry<String, Product> product) throws IOException {
@@ -89,7 +96,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 				saleUpdate = "" + product.getValue().getClient().isSaleUpdate();
 		Client c = new Client(clientName, phone, Boolean.parseBoolean(saleUpdate));
 		Product p = new Product(name,Integer.parseInt(priceM), Integer.parseInt(priceC), c, barcode);
-		lastLocation += p.toStringForFile().length();
+		fileSize += p.toStringForFile().length();
 		raf.write(name.getBytes().length);
 		raf.write(name.getBytes());
 		raf.write(priceM.getBytes().length);
@@ -164,7 +171,9 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 
 	public void addProduct(Product product) {
 		productMap.put(product.getBarCode(), product);
-
+		originC.setProduct(new ProductMemento(product));
+		ct.save(originC.save());
+		
 	}
 
 	public void removeProduct(String key) {
@@ -227,6 +236,13 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		}
 		clearMap();
 	}
+	public boolean deleteLastInsertion() throws Exception {
+		originC.getProductFromMemento(ct.restore());
+		ProductMemento pm = originC.getProductMemento();
+		if (pm == null)
+			return false;
+		return removeProductFromFile(pm.getBarCode());
+	}
 
 	public void clearMap() {
 		switch (selectedSort) {
@@ -243,5 +259,30 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 			break;
 		}
 		productMap.clear();
+	}
+	
+	public String showProfits() {
+		StringBuffer sb=new StringBuffer("");
+		int totalProfit=0;
+		for (Map.Entry<String, Product> product : productMap.entrySet()) {
+			Product prod=product.getValue();
+			int profit = prod.getCostPriceClient()-prod.getCostPriceManager();
+			totalProfit+=profit;
+			sb.append("Profit on "+prod.getName()+": "+profit +"\n");
+		}
+		sb.append("Total profit for the store: "+totalProfit);
+		return sb.toString();
+	}
+
+	@Override
+	public void addListener(InvalidationListener arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void removeListener(InvalidationListener arg0) {
+		// TODO Auto-generated method stub
+		
 	}
 }

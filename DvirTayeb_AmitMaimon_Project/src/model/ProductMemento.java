@@ -2,7 +2,6 @@ package model;
 
 public class ProductMemento {
 
-	private Product product;
 	private String name;
 	private int costPriceManager;
 	private int costPriceClient;
@@ -10,12 +9,15 @@ public class ProductMemento {
 	private String barCode;
 
 	public ProductMemento(Product p) {
-		product = p;
 		this.name = p.getName();
 		this.costPriceManager = p.getCostPriceManager();
 		this.costPriceClient = p.getCostPriceClient();
 		this.client = p.getClient();
 		this.barCode = p.getBarCode();
+	}
+
+	public String getBarCode() {
+		return barCode;
 	}
 
 	public String getName() {
@@ -34,11 +36,6 @@ public class ProductMemento {
 		return client;
 	}
 
-	public void restore() {
-		product.setName(name);
-		product.setClient(client);
-		product.setCostPriceClient(costPriceClient);
-		product.setCostPriceManager(costPriceManager);
-	}
+
 
 }

@@ -20,8 +20,11 @@ public class StoreView {
 	private Button btnShowProducts;
 	private Button btnInsertProduct;
 	private Button btnDeleteProduct;
-	private ChoiceBox<String> sortChoiceBox;
 	private Button btnDeleteAllProduct;
+	private Button btnDeleteLastProduct;
+	private Button btnShowProfits;
+	private ChoiceBox<String> sortChoiceBox;
+	
 	
 	public StoreView(Stage primaryStage) {
 		String background = "-fx-background-color: #FFFFFF";
@@ -36,21 +39,32 @@ public class StoreView {
 		// Buttons:
 		btnShowProducts = new Button("Show Products");
 		HBox hbShowInfo = new HBox(btnShowProducts);
-		HBox.setMargin(btnShowProducts, new Insets(60, 0, 0, 0));
+		HBox.setMargin(btnShowProducts, new Insets(30, 0, 0, 0));
 		hbShowInfo.setAlignment(Pos.TOP_CENTER);
 		btnInsertProduct = new Button("Insert Products");
 		HBox hbInsertInfo = new HBox(btnInsertProduct);
-		HBox.setMargin(btnInsertProduct, new Insets(40, 0, 0, 0));
+		HBox.setMargin(btnInsertProduct, new Insets(30, 0, 0, 0));
 		hbInsertInfo.setAlignment(Pos.TOP_CENTER);
 		btnDeleteProduct = new Button("Delete Product");
 		HBox hbDeleteProduct = new HBox(btnDeleteProduct);
-		HBox.setMargin(btnDeleteProduct, new Insets(40, 0, 0, 0));
+		HBox.setMargin(btnDeleteProduct, new Insets(30, 0, 0, 0));
 		hbDeleteProduct.setAlignment(Pos.TOP_CENTER);
 		
 		btnDeleteAllProduct = new Button("Delete All Product");
 		HBox hbDeleteAllProduct = new HBox(btnDeleteAllProduct);
-		HBox.setMargin(btnDeleteAllProduct, new Insets(40, 0, 0, 0));
+		HBox.setMargin(btnDeleteAllProduct, new Insets(30, 0, 0, 0));
 		hbDeleteAllProduct.setAlignment(Pos.TOP_CENTER);
+		
+		btnShowProfits = new Button("Show Store Profits");
+		HBox hbShowProfits = new HBox(btnShowProfits);
+		HBox.setMargin(btnShowProfits, new Insets(30, 0, 0, 0));
+		hbShowProfits.setAlignment(Pos.TOP_CENTER);
+		
+		btnDeleteLastProduct= new Button("Undo Last Product Insertion");
+		HBox hbDeleteLastProduct = new HBox(btnDeleteLastProduct);
+		HBox.setMargin(btnShowProfits, new Insets(30, 0, 0, 0));
+		hbDeleteLastProduct.setAlignment(Pos.TOP_CENTER);
+		btnDeleteLastProduct.setDisable(true);
 		
 		VBox vbTitle = new VBox();
 		vbTitle.getChildren().addAll(hbTitle);
@@ -69,17 +83,25 @@ public class StoreView {
         HBox.setMargin(sortChoiceBox, new Insets(40, 0, 0, 0));
     	
 		VBox vbCenter = new VBox();
-		vbCenter.getChildren().addAll(hbShowInfo, hbInsertInfo, hbSortBox, hbDeleteProduct, hbDeleteAllProduct);
+		vbCenter.getChildren().addAll(hbShowInfo, hbInsertInfo, hbSortBox, hbDeleteProduct, hbDeleteAllProduct,hbShowProfits,hbDeleteLastProduct);
 		// BorderPane:
 		bp = new BorderPane();
 		bp.setStyle(background);
 		bp.setTop(vbTitle);
 		bp.setCenter(vbCenter);
-		Scene scene = new Scene(bp, 700, 500);
+		Scene scene = new Scene(bp, 700, 700);
 		primaryStage.setScene(scene);
 		primaryStage.show();
 	}
 	
+	public Button getBtnDeleteLastProduct() {
+		return btnDeleteLastProduct;
+	}
+
+	public Button getBtnShowProfits() {
+		return btnShowProfits;
+	}
+
 	public void addEventToSubmit(EventHandler<ActionEvent> event, Button bot) {
 		bot.setOnAction(event);
 	}

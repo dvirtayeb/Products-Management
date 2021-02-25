@@ -83,8 +83,9 @@ public class Product implements Serializable, Comparable<Product> {
 	public String toStringForFile() {
 		String costC = "" + costPriceClient;
 		String costM = "" + costPriceManager;
-		return name.length() + name + costM.length() + costPriceManager + costC.length() + costPriceClient
-				+ client.getName().length() + client.getName() + client.getPhoneNumber().length()
-				+ client.getPhoneNumber() + barCode.length() + barCode;
+		String salesUpdate=""+client.isSaleUpdate();
+		return name.length() + name + costM.length() + costM + costC.length() + costC+
+				barCode.length() + barCode+ client.getName().length() + client.getName() + client.getPhoneNumber().length()
+				+ client.getPhoneNumber()+salesUpdate.length()+salesUpdate;
 	}
 }

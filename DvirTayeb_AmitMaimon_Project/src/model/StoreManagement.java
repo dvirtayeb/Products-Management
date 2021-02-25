@@ -4,15 +4,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
-
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 
 public class StoreManagement implements StoreManagementFunc, Comparator<Product>, Observable {
 
@@ -31,6 +29,8 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 	private boolean isAppendableProductFile;
 	private RandomAccessFile raf;
 	private int fileSize;
+	private ArrayList<Observer> clients;
+	
 
 	public StoreManagement() throws FileNotFoundException {
 		productMap = new HashMap<String, Product>();
@@ -38,6 +38,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		raf = new RandomAccessFile(productFile, "rw");
 		originC = new OriginatorClass();
 		ct = new CareTaker();
+		clients = new ArrayList<Observer>();
 	}
 
 	// create file:
@@ -284,15 +285,33 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		}
 		return "Product not found!";
 	}
+	
 	@Override
-	public void addListener(InvalidationListener arg0) {
-		// TODO Auto-generated method stub
-
+	public void addObserver(model.Observer o) {
+		clients.add(o);
 	}
 
 	@Override
-	public void removeListener(InvalidationListener arg0) {
-		// TODO Auto-generated method stub
-
+	public void deleteObserver(model.Observer o) {
+		clients.remove(o);
+		
 	}
+
+	@Override
+	public void notifyObservers(Client client) {
+		for (Map.Entry<String, Product> product : productMap.entrySet()) {
+			Product prod = product.getValue();
+			if(prod.getClient().isSaleUpdate() == client.isSaleUpdate()) {
+//				TheSender.getSender().getMsg();  
+			}
+		}
+	}
+
+	@Override
+	public void notifyObserver(model.Observer o, int index) {
+		o.getName(obs, client);
+		
+	}
+	
+	
 }

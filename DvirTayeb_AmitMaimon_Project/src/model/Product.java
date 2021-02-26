@@ -76,8 +76,8 @@ public class Product implements Serializable, Comparable<Product> {
 
 	@Override
 	public String toString() {
-		return "Product:\nname=" + name + ", costPriceManager=" + costPriceManager + ", costPriceClient="
-				+ costPriceClient + "\nclient=" + client + "\nbarCode=" + barCode + "\n";
+		return "Product name: " + name + "\n costPriceManager: " + costPriceManager + ", costPriceClient: "
+				+ costPriceClient + "\nclient: " + client + "\nbarCode: " + barCode + "\n";
 	}
 
 	public String toStringForFile() {

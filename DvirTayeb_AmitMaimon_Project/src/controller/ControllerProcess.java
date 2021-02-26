@@ -13,10 +13,12 @@ import commands.DeleteAllProductsCommand;
 import commands.DeleteCommand;
 import commands.DeleteLastProductCommand;
 import commands.InsertCommand;
+import commands.ObserverCommand;
 import commands.SearchCommand;
 import commands.ShowCommand;
 import commands.ShowProfitsCommand;
 import commands.StoreCommand;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
@@ -25,14 +27,17 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
 import model.StoreManagement;
+import model.TheSender;
 import model.Product;
 import model.Client;
 import model.Barcode;
 import view.ProductView;
 import view.SearchProductView;
+import view.SenderView;
 import view.ShowProfitsView;
 import view.DeleteProductView;
 import view.InsertProductView;
+import view.ObserversClientsView;
 import view.StoreView;
 
 public class ControllerProcess {
@@ -49,6 +54,8 @@ public class ControllerProcess {
 	private static Alert sortErrorAlert;
 	private static Alert deleteSuccesAlert;
 	private static Alert deleteFailedAlert;
+	private static Alert nothingToDeleteAlert;
+	private static Alert messageSentAlert;
 
 	private InsertCommand insertCommand;
 	private ChooseSortCommand sortCommand;
@@ -59,8 +66,12 @@ public class ControllerProcess {
 	private DeleteAllProductsCommand deleteAllCommand;
 	private ShowProfitsCommand showProfitsCommand;
 	private SearchCommand searchCommand;
+	private ObserverCommand observerCommand;
+
+	private int nameCounter;
 
 	public ControllerProcess(StoreManagement storeManagement, StoreView storeView, Stage stage) throws Exception {
+		nameCounter = 0;
 		storeM = storeManagement;
 		this.storeView = storeView;
 		// Alerts:
@@ -69,10 +80,13 @@ public class ControllerProcess {
 		filexistsAlert = new Alert(AlertType.INFORMATION, "the products you can see in the 'Show Products'",
 				ButtonType.OK);
 		filexistsAlert.setHeaderText("File exists!");
-		insertSuccesAlert = new Alert(AlertType.INFORMATION, "The Product Added!", ButtonType.OK);
-		insertFailedAlert = new Alert(AlertType.INFORMATION, "The Product Not Added!", ButtonType.OK);
-		deleteFailedAlert = new Alert(AlertType.INFORMATION, "The Product Not found!", ButtonType.OK);
-		deleteSuccesAlert = new Alert(AlertType.INFORMATION, "The Product Deleted!", ButtonType.OK);
+		insertSuccesAlert = new Alert(AlertType.INFORMATION, "The Product Added!", ButtonType.CLOSE);
+		insertFailedAlert = new Alert(AlertType.INFORMATION, "The Product Not Added!", ButtonType.CLOSE);
+		deleteFailedAlert = new Alert(AlertType.INFORMATION, "Product Hasn't Deleted! Barcode is not in our System!",
+				ButtonType.CLOSE);
+		deleteSuccesAlert = new Alert(AlertType.INFORMATION, "The Product Deleted!", ButtonType.CLOSE);
+		messageSentAlert = new Alert(AlertType.INFORMATION, "Message Sent!", ButtonType.CLOSE);
+		nothingToDeleteAlert = new Alert(AlertType.INFORMATION, "Nothing to Delete!", ButtonType.CLOSE);
 		// Commands:
 		showCommand = new ShowCommand("showCommand", storeView);
 		searchCommand = new SearchCommand("searchCommand", storeView);
@@ -82,8 +96,9 @@ public class ControllerProcess {
 		deleteLastProductCommand = new DeleteLastProductCommand("deleteLastProductCommand", storeView);
 		deleteAllCommand = new DeleteAllProductsCommand("deleteAllCommand", storeView);
 		showProfitsCommand = new ShowProfitsCommand("showProfitsCommand", storeView);
+		observerCommand = new ObserverCommand("observerCommand", storeView);
 		storeCommand = new StoreCommand(showCommand, insertCommand, sortCommand, deleteCommand, deleteAllCommand,
-				showProfitsCommand, deleteLastProductCommand, searchCommand);
+				showProfitsCommand, deleteLastProductCommand, searchCommand, observerCommand);
 
 		// check if file exists:
 		if (storeM.isAppendableProductFile() != false) {
@@ -170,15 +185,19 @@ public class ControllerProcess {
 
 			@Override
 			public void handle(ActionEvent arg0) {
+				deleteSuccesAlert.setContentText("Product Deleted!");
 				try {
 					deleteProductView = new DeleteProductView(new Stage());
 					deleteProductView.getDelete().setOnAction(e -> {
 						try {
-							if (storeM.removeProductFromFile(deleteProductView.getTf().getText())) {
+							int check = storeM.removeProductFromFile(deleteProductView.getTf().getText());
+							if (check > 0) {
 								deleteSuccesAlert.show();
-							} else {
+								storeView.getBtnDeleteLastProduct().setDisable(true);
+							} else if (check == 0) {
 								deleteFailedAlert.show();
-							}
+							} else
+								nothingToDeleteAlert.show();
 						} catch (IOException e1) {
 							e1.printStackTrace();
 						} catch (Exception e2) {
@@ -199,12 +218,14 @@ public class ControllerProcess {
 
 			@Override
 			public void handle(ActionEvent event) {
+				deleteSuccesAlert.setContentText("Product Deleted!");
 				try {
-					if (storeM.deleteLastInsertion())
-						storeView.getBtnDeleteLastProduct().setDisable(true);
-					else
-						deleteFailedAlert.setContentText("Nothing inserted therefore Nothing to delete");
-					deleteFailedAlert.show();
+					int check = storeM.deleteLastInsertion();
+					if (check > 0) {
+						deleteSuccesAlert.show();
+					} else
+						nothingToDeleteAlert.show();
+					storeView.getBtnDeleteLastProduct().setDisable(true);
 				} catch (Exception e) {
 
 					e.printStackTrace();
@@ -221,13 +242,14 @@ public class ControllerProcess {
 			@Override
 			public void handle(ActionEvent arg0) {
 				try {
-					storeM.removeAllProducts();
-					deleteSuccesAlert.setContentText("All Products deleted!");
-					deleteSuccesAlert.show();
+					if (storeM.removeAllProducts()) {
+						deleteSuccesAlert.setContentText("All Products deleted!");
+						deleteSuccesAlert.show();
+					} else
+						nothingToDeleteAlert.show();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-
 			}
 
 		};
@@ -258,6 +280,56 @@ public class ControllerProcess {
 
 		};
 		storeCommand.execute(showProfitsCommand.getName(), storeView.getBtnShowProfits(), eventShowProfit);
+
+		EventHandler<ActionEvent> eventSendDiscountMSG = new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent arg0) {
+				SenderView sView = new SenderView(new Stage());
+				sView.getBtnSend().setOnAction(e -> {
+					String msg = sView.getTextField().getText();
+					storeM.notifyObservers(msg);
+					storeView.getBtnShowIntrestedClients().setDisable(false);
+					messageSentAlert.show();
+					sView.getStageForClose().close();
+				});
+
+			}
+
+		};
+		storeCommand.execute(observerCommand.getName(), storeView.getBtnDiscountMessage(), eventSendDiscountMSG);
+
+		EventHandler<ActionEvent> eventShowIntrestedClients = new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent arg0) {
+				nameCounter = 0;
+				ArrayList<String> names = TheSender.getClientsNames();
+				ObserversClientsView obsView = new ObserversClientsView(new Stage());
+				storeView.getBtnShowIntrestedClients().setDisable(true);
+				Thread t = new Thread(() -> {
+					try {
+						for (int i = 0; i < names.size(); i++) {
+							Thread.sleep(2000);
+							Platform.runLater(() -> {
+								obsView.addNameToText(names.get(nameCounter));
+								obsView.addTextToVbox(nameCounter);
+								nameCounter++;
+							});
+						}
+						Thread.sleep(2000);
+						Platform.runLater(() -> {
+							obsView.addNameToText("Thats It For Today Folks!");
+							obsView.addTextToVbox(nameCounter);
+						});
+					} catch (InterruptedException e) {
+					}
+				});
+				t.start();
+			}
+		};
+		storeCommand.execute(observerCommand.getName(), storeView.getBtnShowIntrestedClients(),
+				eventShowIntrestedClients);
 
 	}
 
@@ -397,13 +469,6 @@ public class ControllerProcess {
 		return insertProductView;
 	}
 
-	public Alert getInsertSuccesAlert() {
-		return insertSuccesAlert;
-	}
-
-	public Alert getInsertFailedAlert() {
-		return insertFailedAlert;
-	}
 
 	public StoreManagement getStoreM() {
 		return storeM;

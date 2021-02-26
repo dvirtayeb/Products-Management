@@ -29,9 +29,9 @@ public interface StoreManagementFunc extends Iterable<Product>, Serializable{
 
 	public void removeProduct(String key);
 	
-	public boolean removeProductFromFile(String barcode) throws IOException, Exception;
+	public int removeProductFromFile(String barcode) throws IOException, Exception;
 	
-	public void removeAllProducts() throws IOException;
+	public boolean removeAllProducts() throws IOException;
 	
 	public void resetMap() throws IOException, Exception;
 
@@ -39,9 +39,10 @@ public interface StoreManagementFunc extends Iterable<Product>, Serializable{
 	
 	public void clearMap();
 	
-	public boolean deleteLastInsertion() throws Exception;
+	public int deleteLastInsertion() throws Exception;
 	
 	public String showProfits();
 	
 	public String searchProduct(String barcode);
+	boolean addObserver(Client o);
 }

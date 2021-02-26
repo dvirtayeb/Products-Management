@@ -39,7 +39,7 @@ public class ProductView {
 
 		tableViewProducts = new TableView<>();
 		tableViewProducts.setMaxSize(405, 200);
-		tableViewClients = new TableView<>(); // need to improve this option
+		tableViewClients = new TableView<>(); 
 		tableViewClients.setMaxSize(305, 200);
 		HBox tables = new HBox(tableViewProducts, tableViewClients);
 		tables.setAlignment(Pos.CENTER);
@@ -79,6 +79,7 @@ public class ProductView {
 					.setCellValueFactory(new PropertyValueFactory<Product, String>(type));
 			tableColumnsProductsList.get(productIndexCounter).setMinWidth(100);
 			tableViewProducts.getColumns().add(tableColumnsProductsList.get(productIndexCounter));
+			tableColumnsProductsList.get(productIndexCounter).setSortable(false);
 			productIndexCounter++;
 		} else {
 			tableColumnsClientList.add(new TableColumn<>(value));
@@ -86,8 +87,10 @@ public class ProductView {
 					.setCellValueFactory(new PropertyValueFactory<Client, String>(type));
 			tableColumnsClientList.get(clientIndexCounter).setMinWidth(100);
 			tableViewClients.getColumns().add(tableColumnsClientList.get(clientIndexCounter));
+			tableColumnsClientList.get(clientIndexCounter).setSortable(false);
 			clientIndexCounter++;
 		}
+		
 	}
 
 	public TableView<Product> getTableViewProducts() {

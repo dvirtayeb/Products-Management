@@ -26,19 +26,37 @@ public class FileIterator implements Iterator<Product> {
 	}
 
 	@Override
+//	public Product next() {
+//		String productString[] = new String[7];
+//		try {
+//			raf.seek(currentIndex);
+//			prevIndex = currentIndex;
+//			for (int i = 0; i < productString.length; i++) {
+//				int num = raf.read();
+//				String lenNum = "" + num;
+//				byte[] data = new byte[num];
+//				raf.read(data);
+//				productString[i] = new String(data);
+//				currentIndex += productString[i].length() + lenNum.length();
+//			}
+//			Client client = new Client(productString[4], productString[5], Boolean.parseBoolean(productString[6]));
+//			return new Product(productString[0], Integer.parseInt(productString[1]), Integer.parseInt(productString[2]),
+//					client, productString[3]);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		return null;
+//	}
+	
 	public Product next() {
 		String productString[] = new String[7];
 		try {
 			raf.seek(currentIndex);
 			prevIndex = currentIndex;
 			for (int i = 0; i < productString.length; i++) {
-				int num = raf.read();
-				String lenNum = "" + num;
-				byte[] data = new byte[num];
-				raf.read(data);
-				productString[i] = new String(data);
-				currentIndex += productString[i].length() + lenNum.length();
+				productString[i] = raf.readUTF();
 			}
+			currentIndex =raf.getFilePointer();
 			Client client = new Client(productString[4], productString[5], Boolean.parseBoolean(productString[6]));
 			return new Product(productString[0], Integer.parseInt(productString[1]), Integer.parseInt(productString[2]),
 					client, productString[3]);

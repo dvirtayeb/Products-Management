@@ -28,8 +28,8 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 	private File productFile;
 	private boolean isAppendableProductFile;
 	private RandomAccessFile raf;
-	private int fileSize;
-	private ArrayList<Observer> clients;
+	private ArrayList<Client> clients;
+	private TheSender spamBot; // his name is spamBot because he is spamming people with discounts.
 	
 
 	public StoreManagement() throws FileNotFoundException {
@@ -38,7 +38,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		raf = new RandomAccessFile(productFile, "rw");
 		originC = new OriginatorClass();
 		ct = new CareTaker();
-		clients = new ArrayList<Observer>();
+		clients = new ArrayList<Client>();
 	}
 
 	// create file:
@@ -66,7 +66,6 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 
 	public void saveProductsToFile() throws Exception {
 		raf.seek(0);
-		fileSize = 0;
 		switch (selectedSort) {
 		case 0:
 			for (Map.Entry<String, Product> product : sortedByAscending.entrySet()) {
@@ -86,37 +85,28 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		default:
 			throw new Exception();
 		}
-		raf.setLength(fileSize);
 	}
 
 	public void writeProduct(Map.Entry<String, Product> product) throws IOException {
-		String name = product.getValue().getName(), priceM = "" + product.getValue().getCostPriceManager(),
-				priceC = "" + product.getValue().getCostPriceClient(), barcode = product.getValue().getBarCode(),
+		String name = product.getValue().getName(), barcode = product.getValue().getBarCode(),
 				clientName = product.getValue().getClient().getName(),
-				phone = product.getValue().getClient().getPhoneNumber(),
-				saleUpdate = "" + product.getValue().getClient().isSaleUpdate();
-		Client c = new Client(clientName, phone, Boolean.parseBoolean(saleUpdate));
-		Product p = new Product(name, Integer.parseInt(priceM), Integer.parseInt(priceC), c, barcode);
-		fileSize += p.toStringForFile().length();
-		raf.write(name.getBytes().length);
-		raf.write(name.getBytes());
-		raf.write(priceM.getBytes().length);
-		raf.write(priceM.getBytes());
-		raf.write(priceC.getBytes().length);
-		raf.write(priceC.getBytes());
-		raf.write(barcode.getBytes().length);
-		raf.write(barcode.getBytes());
-		raf.write(clientName.getBytes().length);
-		raf.write(clientName.getBytes());
-		raf.write(phone.getBytes().length);
-		raf.write(phone.getBytes());
-		raf.write(saleUpdate.getBytes().length);
-		raf.write(saleUpdate.getBytes());
-	}
+				phone = product.getValue().getClient().getPhoneNumber();
+		boolean saleUpdate = product.getValue().getClient().isSaleUpdate();
+		int priceM = product.getValue().getCostPriceManager(), priceC = product.getValue().getCostPriceClient();
 
+		raf.writeUTF(name);
+		raf.writeUTF(String.valueOf(priceM));
+		raf.writeUTF(String.valueOf(priceC));
+		raf.writeUTF(barcode);
+		raf.writeUTF(clientName);
+		raf.writeUTF(phone);
+		raf.writeUTF(String.valueOf(saleUpdate));
+	}
 	public boolean initProductsFromFile() {
 		try {
 			Iterator<Product> iterator = iterator();
+			if(!clients.isEmpty())
+				clients.clear();
 			while (raf.read() != -1) {
 				if (iterator.hasNext())
 					addProduct(iterator.next());
@@ -173,6 +163,7 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 	public void addProduct(Product product) {
 		productMap.put(product.getBarCode(), product);
 		originC.setProduct(new ProductMemento(product));
+		addObserver(product.getClient());
 		ct.save(originC.save());
 
 	}
@@ -200,17 +191,20 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 		return null;
 	}
 
-	public boolean removeProductFromFile(String barcode) throws IOException, Exception {
+	public int removeProductFromFile(String barcode) throws IOException, Exception {
 		Iterator<Product> iterator = iterator();
 		raf.seek(0);
-		boolean hasDeleted = false;
+		int hasDeleted = 0;
+		if(raf.read()==-1)
+			return -1;
 		while (raf.read() != -1) {
 			if (iterator.hasNext()) {
 				Product p = iterator.next();
 				if (p.getBarCode().equals(barcode)) {
+					deleteObserver(p.getClient());
 					iterator.remove();
 					resetMap();
-					hasDeleted = true;
+					hasDeleted = 1;
 					break;
 				}
 			}
@@ -227,22 +221,27 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 
 	}
 
-	public void removeAllProducts() throws IOException {
+	public boolean removeAllProducts() throws IOException {
 		Iterator<Product> iterator = iterator();
 		raf.seek(0);
+		if(raf.read()==-1)
+			return false;
 		while (raf.read() != -1) {
 			if (iterator.hasNext()) {
 				iterator.remove();
+				raf.seek(0);
 			}
 		}
+		clients.clear();
 		clearMap();
+		return true;
 	}
 
-	public boolean deleteLastInsertion() throws Exception {
+	public int deleteLastInsertion() throws Exception {
 		originC.getProductFromMemento(ct.restore());
 		ProductMemento pm = originC.getProductMemento();
 		if (pm == null)
-			return false;
+			return -1;
 		return removeProductFromFile(pm.getBarCode());
 	}
 
@@ -287,31 +286,32 @@ public class StoreManagement implements StoreManagementFunc, Comparator<Product>
 	}
 	
 	@Override
-	public void addObserver(model.Observer o) {
-		clients.add(o);
-	}
-
-	@Override
-	public void deleteObserver(model.Observer o) {
-		clients.remove(o);
-		
-	}
-
-	@Override
-	public void notifyObservers(Client client) {
-		for (Map.Entry<String, Product> product : productMap.entrySet()) {
-			Product prod = product.getValue();
-			if(prod.getClient().isSaleUpdate() == client.isSaleUpdate()) {
-//				TheSender.getSender().getMsg();  
-			}
+	public boolean addObserver(Client c) {
+		if(c.isSaleUpdate()) {
+			clients.add(c);
+			return true;
 		}
+		return false;
 	}
 
 	@Override
-	public void notifyObserver(model.Observer o, int index) {
-		o.getName(obs, client);
+	public void deleteObserver(Client c) {
+		clients.remove(c);
 		
 	}
+
+	@Override
+	public void notifyObservers(String msg) {
+		spamBot=TheSender.getSender();
+		spamBot.resetClientList();
+		spamBot.setMsg(msg);
+		for (int i = 0; i < clients.size(); i++) {
+			clients.get(i).update(this, spamBot);
+		}
+		
+	}
+
+
 	
 	
 }

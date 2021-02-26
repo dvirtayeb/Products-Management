@@ -1,8 +1,7 @@
 package model;
 
 public interface Observable {
-	void addObserver(Observer o);
-	void deleteObserver(Observer o);
-	void notifyObservers(Client client);
-	void notifyObserver(Observer o, int index);
+	boolean addObserver(Client o);
+	void deleteObserver(Client o);
+	void notifyObservers(String msg);
 }

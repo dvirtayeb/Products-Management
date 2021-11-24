@@ -1,7 +1,7 @@
 # Products-Management
 * Gui application for products management to assist the business manager.
 * Shows the use of the principles of Object-Oriented Programming and Design.
-* Co-worker: Amit Maiomon.
+* Co-worker: Amit Maimon.
 
 # System capabilities:
 * CRUD options.
